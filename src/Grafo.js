@@ -1,7 +1,7 @@
 class Grafo {
   constructor(direcionado = false) {
     this.listaAdj = new Map();
-    this.direcionado = direcionado; // false = não direcionado, true = dígrafo
+    this.direcionado = direcionado;
   }
 
   adicionarVertice(v) {
@@ -11,12 +11,14 @@ class Grafo {
   }
 
   adicionarAresta(v, w, peso = 1) {
+    if (peso < 0) {
+      throw new Error('Peso da aresta não pode ser negativo');
+    }
     if (!this.listaAdj.has(v)) this.adicionarVertice(v);
     if (!this.listaAdj.has(w)) this.adicionarVertice(w);
 
-    // adiciona aresta ponderada
     this.listaAdj.get(v).push({ vertice: w, peso });
-    if (!this.direcionado) {
+    if (!this.direcionado && v !== w) {
       this.listaAdj.get(w).push({ vertice: v, peso });
     }
   }
@@ -24,7 +26,12 @@ class Grafo {
   contarLacos() {
     let count = 0;
     for (const [v, vizinhos] of this.listaAdj) {
-      count += vizinhos.filter(n => n.vertice === v).length;
+      for (const { vertice: w } of vizinhos) {
+        if (v === w) {
+          count++;
+          if (!this.direcionado) break;
+        }
+      }
     }
     return count;
   }
@@ -78,8 +85,11 @@ class Grafo {
     return caminho.reverse();
   }
 
-  // Algoritmo de Dijkstra para grafos ponderados
   dijkstra(inicio) {
+    if (!this.listaAdj.has(inicio)) {
+      throw new Error(`Vértice "${inicio}" não existe`);
+    }
+
     const dist = new Map();
     const prev = new Map();
     const visitado = new Set();
@@ -142,17 +152,23 @@ class Grafo {
   }
 
   paraDot() {
-    const linhas = ['graph G {'];
-    // laços ponderados
+    const linhas = this.direcionado ? ['digraph G {'] : ['graph G {'];
+
+    for (const v of this.listaAdj.keys()) {
+      linhas.push(`  "${v}";`);
+    }
+
     for (const [v, vizinhos] of this.listaAdj) {
       vizinhos
         .filter(n => n.vertice === v)
         .forEach(n => linhas.push(`  "${v}" -- "${v}" [label="${n.peso}"];`));
     }
-    // arestas distintas
+
     const vistos = new Set();
     for (const [v, vizinhos] of this.listaAdj) {
       for (const { vertice: w, peso } of vizinhos) {
+        if (v === w) continue;
+
         const chave = this.direcionado ? `${v}->${w}` : [v, w].sort().join('|');
         if (!vistos.has(chave)) {
           const op = this.direcionado ? '->' : '--';
@@ -161,6 +177,7 @@ class Grafo {
         }
       }
     }
+
     linhas.push('}');
     return linhas.join('\n');
   }
