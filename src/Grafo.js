@@ -161,7 +161,7 @@ class Grafo {
     for (const [v, vizinhos] of this.listaAdj) {
       vizinhos
         .filter(n => n.vertice === v)
-        .forEach(n => linhas.push(`  "${v}" -- "${v}" [label="${n.peso}"];`));
+        .forEach(n => linhas.push(`  "${v}" -- "${v}" [weight="${n.peso}", label="${n.peso}"];`));
     }
 
     const vistos = new Set();
@@ -172,7 +172,7 @@ class Grafo {
         const chave = this.direcionado ? `${v}->${w}` : [v, w].sort().join('|');
         if (!vistos.has(chave)) {
           const op = this.direcionado ? '->' : '--';
-          linhas.push(`  "${v}" ${op} "${w}" [label="${peso}"];`);
+          linhas.push(`  "${v}" ${op} "${w}" [weight="${peso}", label="${peso}"];`);
           vistos.add(chave);
         }
       }
